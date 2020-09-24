@@ -3,4 +3,4 @@
 phoebe/runserver
 phoebe/db.sqlite3
 phoebe/phoebe/local_settings.py
-phoebe/charts/static/js/lightweight-charts.standalone.js
+phoebe/charts/static/js/lightweight-charts.standalone.production.js
