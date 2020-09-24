@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+<style>
+    label, input {
+        display: block;
+    }
+    span.helptext {
+        display: none;
+    }
+</style>
+
+
+<main class='col'>
+    {% block content %}
+    {% endblock %}
+</main>
+
+{% endblock %}

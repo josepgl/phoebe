@@ -1,0 +1,87 @@
+{% load static %}
+<html>
+
+<head>
+  <title>{% block title %}Phoebe{% endblock %}</title>
+{% block head %}
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"> -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="{% static 'img/phoebe.svg' %}" />
+  <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"> -->
+  <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.css">
+  <script src="{% static 'bootstrap/js/jquery.min.js' %}"></script>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.js' %}"></script>
+{% endblock %}
+</head>
+
+<body>
+  <div class="container-fluid d-flex flex-column h-100 p-0">
+
+    <header class="navbar navbar-expand-md navbar-light bg-light shadow-sm pt-0 pb-0 pr-0">
+
+      <div class="container-fluid p-0">
+
+        <a class="navbar-brand" href="{% url 'chart_list' %}">
+          <img src="{% static 'img/phoebe.svg' %}" width="24" height="24" alt="" loading="lazy">
+        </a>
+
+        <span class="navbar-brand mb-0 h1">Phoebe</span>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <div class="container-fluid p-0">
+            <ul class="navbar-nav mr-auto float-left">
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'chart_list' %}">Charts</a>
+              </li>
+            </ul>
+
+            {% if user.is_authenticated %}
+            <div class="float-right dropdown pr-2">
+              <a class="nav-link nav-item dropdown-toggle text-secondary pr-0" href="#" role="button" data-toggle="dropdown">
+                {{ user.username|default:'Guest' }}
+                <svg width="1.5em" height="1.5em" viewBox="0 0 16 16" class="bi bi-person-circle" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M13.468 12.37C12.758 11.226 11.195 10 8 10s-4.757 1.225-5.468 2.37A6.987 6.987 0 0 0 8 15a6.987 6.987 0 0 0 5.468-2.63z"/>
+                  <path fill-rule="evenodd" d="M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                  <path fill-rule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8z"/>
+                </svg>
+              </a>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a>
+                <a class="dropdown-item" href="{% url 'password_change' %}">Reset password</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+              </div>
+            </div>
+            {% else %}
+            <div class="float-right">
+                <a class="nav-link nav-item text-secondary" href="{% url 'login' %}">Login</a>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+
+      </div>
+
+    </header>
+
+    <div id="headed_container"class="container-fluid" style="flex:1 1 auto;">
+      <div id="headed_row" class="row p-3">
+        {% block page_content %}{% endblock %}
+      </div>
+    </div>
+
+  </div>
+</body>
+
+<script>
+$(function() {
+  $('nav a[href^="/' + location.pathname.split("/")[1] + '"]').addClass('active');
+});
+</script>
+{% block scripts %}{% endblock %}
+</html>

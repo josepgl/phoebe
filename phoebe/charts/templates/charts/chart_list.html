@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ block.super }} | Charts{% endblock %}
+{% block head %}{{ block.super }}
+<style type="text/css">
+    .border{
+        border-width: normal !important;
+        border-color: #666 !important;
+    }
+    .chart-header {
+        display: flex;
+        /*flex-direction: row;*/
+        /*flex-wrap: nowrap;*/
+    }
+    .go-to-realtime-button {
+        width: 27px;
+        height: 27px;
+        position: absolute;
+        display: none;
+        padding: 7px;
+        box-sizing: border-box;
+        font-size: 10px;
+        border-radius: 50%;
+        text-align: center;
+        z-index: 1000;
+        color: #B2B5BE;
+        background: rgba(250, 250, 250, 0.95);
+        box-shadow: 0 2px 5px 0 rgba(117, 134, 150, 0.45);
+    }
+    .switcher {
+        /*width: 435px;*/
+        /*float: left;*/
+    }
+    .switcher-active-item {
+        background-color: #d7eaff;
+    }
+    .close {
+        /*position: relative;*/
+        left: 7em;
+        top: 0.1em;
+        opacity: 1;
+        font-size: 2em;
+        flex: 0 1 auto;
+    }
+    .close-chart-container {
+        display: block;
+        /*float: right;*/
+        width: 2em;
+        /*color: black;*/
+        /*overflow:hidden;*/
+        /*border: 1px solid black;*/
+    }
+    .filler {
+        /*display: block;*/
+        /*width: auto;*/
+        flex: 1 1 auto;
+    }
+</style>
+
+<!-- Add-chart button -->
+<style type="text/css">
+    .float{
+        position:fixed;
+        width:50px;
+        height:50px;
+        bottom:20px;
+        right:20px;
+        background-color:#EEE;
+        /*border-radius:40px;*/
+        text-align:center;
+        box-shadow: 2px 2px 3px #999;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="col">
+
+    <div id="main_row" class="row"></div>
+</div>
+
+<!-- Add-chart button -->
+<div class="float rounded-circle">
+    <button class="rounded-circle" onclick="add_chart();" style="
+    margin-top: -10px;
+    /*height: 45px;*/
+    /*text-decoration: none;*/
+    /*display: inline-block;*/
+    border: none;
+    /*padding: 1rem 2rem;*/
+    /*margin: 0;*/
+    /*text-decoration: none;*/
+    background: #0069ed;
+    background: rgba(0,0,0,0);
+    /*color: #ffffff;*/
+    /*font-family: sans-serif;*/
+    /*font-size: 1rem;*/
+    cursor: pointer;
+    text-align: center;
+    /*transition: background 250ms ease-in-out, */
+                /*transform 150ms ease;*/
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+    ">
+        <font size="20">+</font>
+    </button>
+</div>
+
+<script src="{% static 'js/lightweight-charts.standalone.js' %}"></script>
+<script src="{% static 'js/symbol_chart.js' %}"></script>
+
+<script>
+    const prices_url = "https://api.binance.com/api/v3/ticker/price";
+    var SYMBOLS = getSymbolsFromTickers(fetchSymbols());
+
+    // var intervals = ['1m','3m','5m','15m','30m','1h','2h','4h','6h','8h','12h','1d','3d','1w','1M']; // All intervals available
+    var intervals = ['5m','15m','1h','2h','4h','6h','8h','12h','1d','3d','1w','1M'];
+
+
+    // var chart_div = document.getElementById('chart_div');
+
+    // var chartWidth = chart_div.offsetWidth;
+    // var chartHeight = chart_div.offsetHeight;
+    var chartWidth = 800;
+    var chartHeight = 400;
+
+    const chartProperties = {
+        width: chartWidth,
+        height: chartHeight,
+        timeScale: {
+            timeVisible: true,
+            secondsVisible: false,
+            rightOffset: 2,
+        },
+        grid: {
+            vertLines: {
+                visible: false,
+            },
+            horzLines: {
+                visible: false,
+                // color: 'rgba(42, 46, 57, 0.5)',
+            },
+        },
+        priceScale: {
+            // position: 'left',
+            // mode: 2,
+            // autoScale: false,
+            // invertScale: true,
+            // alignLabels: false,
+            // borderVisible: false,
+            // borderColor: '#555ffd',
+            scaleMargins: {
+                top: 0.05,
+                bottom: 0.05,
+            },
+        },
+        // localization: {
+        //     priceFormatter: price => {
+        //         console.log('price: ', price);
+        //         return price;
+        //     },
+        // },
+    }
+
+    ////////////////////////////////////////////////////////
+
+    function getSymbolsFromTickers(input) {
+        var json = JSON.parse(input);
+
+        // SYMBOLS = json.map(x => x.symbol);
+        // console.log(SYMBOLS);
+
+        return json.map(x => x.symbol);
+    }
+
+    function fetchSymbols() {
+        var oReq = new XMLHttpRequest();
+        // oReq.addEventListener("load", return);
+        oReq.open("GET", prices_url, false);
+        oReq.send();
+        return oReq.responseText;
+    }
+
+
+    /////////////////////////////////////////////////////////
+
+
+    function createSimpleSwitcher(items, activeItem, activeItemChangedCallback, id) {
+        var switcherElement = document.getElementById(id);
+        switcherElement.classList.add('switcher');
+
+        var intervalElements = items.map(function(item) {
+            var itemEl = document.createElement('button');
+            itemEl.innerText = item;
+            itemEl.classList.add('switcher-item', 'btn',  'btn-sm', 'border');
+            itemEl.classList.toggle('switcher-active-item', item === activeItem);
+            itemEl.addEventListener('click', function() {
+                onItemClicked(item);
+            });
+            switcherElement.appendChild(itemEl);
+            return itemEl;
+        });
+
+        function onItemClicked(item) {
+            if (item === activeItem) {
+                return;
+            }
+
+            intervalElements.forEach(function(element, index) {
+                element.classList.toggle('switcher-active-item', items[index] === item);
+            });
+
+            activeItem = item;
+
+            activeItemChangedCallback(item);
+        }
+
+        return switcherElement;
+    }
+
+    // function syncToInterval(interval) {
+    //     setTimeFrame
+    //     if (areaSeries) {
+    //         chart.removeSeries(areaSeries);
+    //         areaSeries = null;
+    //     }
+    //     areaSeries = chart.addAreaSeries({
+    //     topColor: 'rgba(76, 175, 80, 0.56)',
+    //     bottomColor: 'rgba(76, 175, 80, 0.04)',
+    //     lineColor: 'rgba(76, 175, 80, 1)',
+    //     lineWidth: 2,
+    //     });
+    //     areaSeries.setData(seriesesData.get(interval));
+    // }
+
+    function add_gotorealtime_btn(chart_id, sc, cp) {
+        var width = 27;
+        var height = 27;
+
+        var button = document.createElement('div');
+        button.id = chart_id + '_gtrt_btn';
+        button.className = 'go-to-realtime-button';
+        button.style.left = (cp.width - width - 100) + 'px';
+        button.style.top = (cp.height - height - 20) + 'px';
+        button.style.color = '#4c525e';
+        button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" width="14" height="14"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M6.5 1.5l5 5.5-5 5.5M3 4l2.5 3L3 10"></path></svg>';
+
+        // var live_chart_div = document.getElementById('chart_div');
+        // chart_div.insertBefore(button, chart_div.childNodes[0]);
+        chart_div = document.getElementById(chart_id);
+        chart_div.appendChild(button);
+
+        var timeScale = sc.chart.timeScale();
+        timeScale.subscribeVisibleTimeRangeChange(function() {
+            var buttonVisible = timeScale.scrollPosition() < 0;
+            button.style.display = buttonVisible ? 'block' : 'none';
+        });
+
+        button.addEventListener('click', function() {
+            timeScale.scrollToRealTime();
+        });
+
+        button.addEventListener('mouseover', function() {
+            button.style.background = 'rgba(250, 250, 250, 1)';
+            button.style.color = '#000';
+        });
+
+        button.addEventListener('mouseout', function() {
+            button.style.background = 'rgba(250, 250, 250, 0.6)';
+            button.style.color = '#4c525e';
+        });
+    }
+
+</script>
+<script>
+    const DEFAULT_TIMEFRAME = '1d';
+    var next_id = 1;
+    var CHARTS = [];
+
+    var newHeight = 400;
+    var newWidth = 300;
+
+    // const queryString = window.location.search;
+    // console.log('queryString:', queryString);
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Default
+    var symParams = ['BTCUSDT'];
+
+    if (urlParams.has('symbols')) {
+        symParams = urlParams.get('symbols').split(',');
+        // console.log(symParams);
+    }
+
+    symParams.forEach(add_chart);
+
+    function add_chart(symbol='BTCUSDT') {
+        var id = next_id;
+        var chart_id = "chart_" + next_id;
+        next_id++;
+
+        var main_row = document.getElementById('main_row');
+
+        var chart_widget = document.createElement('div');
+        chart_widget.setAttribute('id', chart_id + '_widget');
+        chart_widget.setAttribute('class', 'border');
+
+        var col = document.createElement('div');
+        col.setAttribute('class', 'col');
+
+
+        var chart_header_row = document.createElement('div');
+        chart_header_row.classList.add('chart-header', 'row');
+
+        // select
+        var select = document.createElement('select');
+        select.setAttribute('id', chart_id + '_select');
+        // options
+        for (var i = 0; i < SYMBOLS.length; i++) {
+            let sym = SYMBOLS[i];
+            let option = document.createElement('option');
+            option.value = sym;
+            option.text = sym;
+            if (sym == symbol) {
+                option.selected = 'selected';
+            }
+            select.add(option);
+        }
+
+        var tf_switch = document.createElement('div');
+        var tf_switch_id = chart_id + '_timeframe_switch';
+        tf_switch.setAttribute('id', tf_switch_id);
+
+        var filler = document.createElement('div');
+        filler.classList.add('filler');
+
+        var button = document.createElement('button');
+        // button.textContent = "&#10060; &#x274C; &#10062; &#x274E;";
+        button.textContent = '\u274C';
+        button.classList.add('btn', 'btn-sm', 'close');
+        // button.setAttribute('style', 'position: relative; float: right');
+        var close_cont = document.createElement('div');
+        // button.classList.add('btn', 'btn-sm', 'close');
+        // close_cont.classList.add('float-right');
+        close_cont.classList.add('close-chart-container');
+        close_cont.appendChild(button);
+
+
+
+        var chart_main_row = document.createElement('div');
+        chart_main_row.classList.add('row');
+        // row_2.classList.add('border');
+
+        var chart_container = document.createElement('div');
+        chart_container.setAttribute('id', chart_id);
+        // chart_container.setAttribute('id', chart_id + '_container');
+
+
+        chart_header_row.appendChild(select);
+        chart_header_row.appendChild(tf_switch);
+        chart_header_row.appendChild(filler);
+        chart_header_row.appendChild(close_cont);
+        chart_main_row.appendChild(chart_container);
+        col.appendChild(chart_header_row);
+        col.appendChild(chart_main_row);
+        chart_widget.appendChild(col);
+        main_row.appendChild(chart_widget);
+
+
+        // Init Chart
+        var sc = new SymbolChart(symbol,chart_id,DEFAULT_TIMEFRAME,chartProperties);
+        sc.loadHistoricData();
+        sc.setLive();
+
+        var chart_info = {
+            'id': id,
+            'chart_id': chart_id,
+            'sc': sc,
+            'cp': chartProperties,
+        };
+
+        select.addEventListener('input', function() {sc.setSymbol(this.value)});
+        button.addEventListener('click', function(e){
+            // var grandpa = this.parentNode.parentNode;
+            // var grandgrandpa = this.parentNode.parentNode.parentNode;
+            var gggpa = this.parentNode.parentNode.parentNode.parentNode;
+            sc.setLive(false);
+            sc = null;
+            // sc.delete();
+            gggpa.parentNode.removeChild(gggpa);
+        })
+
+
+        // Timeframe switch
+        createSimpleSwitcher(intervals, DEFAULT_TIMEFRAME, function(interval) {sc.setTimeFrame(interval)}, tf_switch_id);
+        add_gotorealtime_btn(chart_id, sc, chartProperties);
+
+        // SYMBOLS.push(chart_info);
+        CHARTS.push(chart_info);
+    }
+
+    function resizeAll() {
+        for (var i = 0; i < CHARTS.length; i++) {
+            s_info = CHARTS[i];
+            s_info.sc.chart.resize(newWidth, newHeight);
+        }
+    }
+</script>
+
+{% endblock %}
