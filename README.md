@@ -29,8 +29,3 @@ $ source venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
-4. Install JavaScript charts library (https://github.com/tradingview/lightweight-charts)
-```bash
-$ wget https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js -P phoebe/charts/static/js/
-```
-
